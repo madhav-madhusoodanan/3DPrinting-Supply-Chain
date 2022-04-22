@@ -15,11 +15,11 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     event DoneRecycleCompany(address indexed user, address indexed batchNo);
 
     // address public lastAccess;
-    mapping(address => bool) authorizedCaller;
+    mapping(address => uint8) authorizedCaller;
     mapping(address => address) lastHandledBatch;
 
     constructor() {
-        authorizedCaller[msg.sender] = true;
+        authorizedCaller[msg.sender] = 1;
         emit AuthorizedCaller(msg.sender);
     }
 
@@ -29,9 +29,22 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
 
 
 
-    modifier onlyAuthCaller() {
+    modifier onlyAuthCaller(uint8 role) {
         // lastAccess = msg.sender;
-        require(authorizedCaller[msg.sender]);
+
+        /* 1: 
+            2: raw materials
+            3. chemical processing
+            4. polymerization
+            5. filament production
+            6. 3D printing
+            7. recycling
+             */
+        require(authorizedCaller[msg.sender] == role);
+        _;
+    }
+    modifier onlyAuthorized() {
+        require(authorizedCaller[msg.sender] != 0);
         _;
     }
 
@@ -49,15 +62,15 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
 
 
 
-    function authorizeCaller(address _caller) public onlyOwner returns(bool) {
-        authorizedCaller[_caller] = true;
+    function authorizeCaller(address _caller, uint8 role) public onlyOwner returns(bool) {
+        authorizedCaller[_caller] = role;
         emit AuthorizedCaller(_caller);
         return true;
     }
 
 
     function deAuthorizeCaller(address _caller) public onlyOwner returns(bool) {
-        authorizedCaller[_caller] = false;
+        authorizedCaller[_caller] = 0;
         emit DeAuthorizedCaller(_caller);
         return true;
     }
@@ -161,12 +174,12 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         // delete lastHandledBatch[msg.sender];
     }
 
-    function getUserRole(address _userAddress) public onlyAuthCaller view returns(string memory) {
+    function getUserRole(address _userAddress) public view returns(string memory) {
         return userRole[_userAddress];
     }
 
 
-    function getNextAction(address _batchNo) public onlyAuthCaller view returns(string memory) {
+    function getNextAction(address _batchNo) public onlyAuthorized view returns(string memory) {
         return nextAction[_batchNo];
     }
 
@@ -176,7 +189,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         string memory _contactNo,
         string memory _role,
         bool _isActive,
-        string memory _profileHash) public onlyAuthCaller returns(bool) {
+        string memory _profileHash) public onlyAuthorized returns(bool) {
 
         userDetail.name = _name;
         userDetail.contactNo = _contactNo;
@@ -191,7 +204,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     }
 
 
-    function getUser(address _userAddress) public onlyAuthCaller view returns(string memory name,
+    function getUser(address _userAddress) public onlyAuthorized view returns(string memory name,
         string memory contactNo,
         string memory role,
         bool isActive,
@@ -205,7 +218,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     }
 
 
-    function getBasicDetails(address _batchNo) public onlyAuthCaller view returns(string memory registrationNo,
+    function getBasicDetails(address _batchNo) public onlyAuthorized view returns(string memory registrationNo,
         string memory companyName,
         string memory companyAddress) {
 
@@ -218,7 +231,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     function setBasicDetails(string memory _registrationNo,
         string memory _companyName,
         string memory _companyAddress
-    ) public onlyAuthCaller returns(bool) {
+    ) public onlyAuthorized returns(bool) {
 
         address batchNo = address(
                             uint160(
@@ -244,7 +257,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         string memory _rawMaterialName,
         uint256 _rawMaterialWeight,
         uint256 _carbonEmission,
-        uint256 _workerAge) public onlyAuthCaller returns(bool) {
+        uint256 _workerAge) public onlyAuthCaller(2) returns(bool) {
 
         rawMaterialExtractorData.rawMaterialName = _rawMaterialName;
         rawMaterialExtractorData.rawMaterialWeight = _rawMaterialWeight;
@@ -260,7 +273,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     }
 
 
-    function getRawMaterialExtractorData(address batchNo) public onlyAuthCaller view returns(string memory rawMaterialName,
+    function getRawMaterialExtractorData(address batchNo) public onlyAuthorized view returns(string memory rawMaterialName,
         uint256 rawMaterialWeight,
         uint256 carbonEmission) {
 
@@ -272,7 +285,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         string memory _refinedComponent,
         uint256 _refinedOutput,
         uint256 _carbonEmission,
-        uint256 amountDisposed) public onlyAuthCaller returns(bool) {
+        uint256 amountDisposed) public onlyAuthCaller(3) returns(bool) {
 
         chemicalProcessorData.refinedComponent = _refinedComponent;
         chemicalProcessorData.refinedOutput = _refinedOutput;
@@ -287,7 +300,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         return true;
     }
 
-    function getChemicalProcessorData(address batchNo) public onlyAuthCaller view returns(string memory refinedComponent,
+    function getChemicalProcessorData(address batchNo) public onlyAuthorized view returns(string memory refinedComponent,
         uint256 refinedOutput,
         uint256 carbonEmission, uint256 amountDisposed) {
 
@@ -302,7 +315,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         uint256 _componentOutput,
         uint256 _recycledMaterialsUsed,
         uint256 _carbonEmission,
-        uint256 _amountDisposed) public onlyAuthCaller returns(bool) {
+        uint256 _amountDisposed) public onlyAuthCaller(4) returns(bool) {
 
         polymerizationCompanyData.companyName = _companyName;
         polymerizationCompanyData.companyAddress = _companyAddress;
@@ -320,7 +333,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         return true;
     }
 
-    function getPolymerizationCompanyData(address batchNo) public onlyAuthCaller view returns(string memory companyName,
+    function getPolymerizationCompanyData(address batchNo) public onlyAuthorized view returns(string memory companyName,
         string memory companyAddress,
         string memory componentName,
         uint256 componentOutput,
@@ -339,7 +352,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
             uint256 _filamentOutput,
             uint256 _recycledMaterialsUsed,
             uint256 _carbonEmission,
-            uint256 _amountDisposed) public onlyAuthCaller returns(bool) {
+            uint256 _amountDisposed) public onlyAuthCaller(5) returns(bool) {
 
             filamentProducerData.companyAddress = _companyAddress;
             filamentProducerData.componentName = _componentName;
@@ -357,7 +370,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
             return true;
         }
 
-        function getFilamentProducerData(address batchNo) public onlyAuthCaller view returns(
+        function getFilamentProducerData(address batchNo) public onlyAuthorized view returns(
             string memory companyAddress,
             string memory componentName,
             string memory filamentType,
@@ -375,7 +388,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
             uint256 _carbonEmission,
             uint256 _partWeight,
             uint256 _scrapWeight,
-            uint256 _amountDisposed) public {
+            uint256 _amountDisposed) public onlyAuthCaller(6) returns(bool) {
                 threeDPrintingCompanyData.printime = _printime;
                 threeDPrintingCompanyData.energyUsed = _energyUsed;
                 threeDPrintingCompanyData.carbonEmission = _carbonEmission;
@@ -387,10 +400,12 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
 
                 nextAction[batchNo] = 'RECYCLE';
                 emit Done3DPrintingCompany(msg.sender, batchNo);
+
+
                 
             }
 
-    function get3DPrintingCompanyData (address batchNo) public onlyAuthCaller view returns (uint256 _printime,
+    function get3DPrintingCompanyData (address batchNo) public onlyAuthCaller(7) view returns (uint256 _printime,
             uint256 _energyUsed,
             uint256 _carbonEmission,
             uint256 _partWeight,
@@ -400,7 +415,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
                 return (tmpData.printime, tmpData.energyUsed, tmpData.carbonEmission, tmpData.partWeight, tmpData.scrapWeight, tmpData.amountDisposed);
             }
 
-    function setRecycleCompanyData(address batchNo, uint256 _amountDisposed) public onlyAuthCaller returns(bool) {
+    function setRecycleCompanyData(address batchNo, uint256 _amountDisposed) public onlyAuthCaller(8) returns(bool) {
         recyclingCompanyData.amountDisposed = _amountDisposed;
 
         batchRecyclingCompany[batchNo] = recyclingCompanyData;
@@ -410,12 +425,12 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         return true;
     }
 
-    function getRecycleCompanyData(address batchNo) public onlyAuthCaller view returns(uint256 amountDisposed) {
+    function getRecycleCompanyData(address batchNo) public onlyAuthorized view returns(uint256 amountDisposed) {
         RecyclingCompany memory tmpData = batchRecyclingCompany[batchNo];
         return tmpData.amountDisposed;
     }
 
-    function cumulatedCarbonEmission(address batchNo, string memory _stage) public onlyAuthCaller view returns(uint256) {
+    function cumulatedCarbonEmission(address batchNo, string memory _stage) public view returns(uint256) {
         uint256 carbonEmission = 0;
         carbonEmission += batchChemicalProcessor[batchNo].carbonEmission;
         if (compareStrings(_stage, 'RAWMATERIALEXTRACTION')) {
