@@ -15,9 +15,11 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     event DoneRecycleCompany(address indexed user, address indexed batchNo);
 
     // address public lastAccess;
+    mapping(address => bool) authorizedCaller;
+    mapping(address => address) lastHandledBatch;
 
     constructor() {
-        authorizedCaller[msg.sender] = 1;
+        authorizedCaller[msg.sender] = true;
         emit AuthorizedCaller(msg.sender);
     }
 
@@ -29,7 +31,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
 
     modifier onlyAuthCaller() {
         // lastAccess = msg.sender;
-        require(authorizedCaller[msg.sender] == 1);
+        require(authorizedCaller[msg.sender]);
         _;
     }
 
@@ -45,18 +47,17 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     mapping(address => string) userRole;
 
 
-    mapping(address => uint8) authorizedCaller;
 
 
     function authorizeCaller(address _caller) public onlyOwner returns(bool) {
-        authorizedCaller[_caller] = 1;
+        authorizedCaller[_caller] = true;
         emit AuthorizedCaller(_caller);
         return true;
     }
 
 
     function deAuthorizeCaller(address _caller) public onlyOwner returns(bool) {
-        authorizedCaller[_caller] = 0;
+        authorizedCaller[_caller] = false;
         emit DeAuthorizedCaller(_caller);
         return true;
     }
@@ -150,6 +151,15 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     ThreeDPrintingCompany threeDPrintingCompanyData;
     RecyclingCompany recyclingCompanyData;
 
+    function compareStrings(string memory _str1, string memory _str2) public pure returns(bool) {
+        return keccak256(abi.encodePacked(_str1)) == keccak256(abi.encodePacked(_str2));
+    }
+
+    function getLastHandledBatch() public view returns(address) {
+        return lastHandledBatch[msg.sender];
+        // optionally, delete the entry for optimization but then this will become a non-view function
+        // delete lastHandledBatch[msg.sender];
+    }
 
     function getUserRole(address _userAddress) public onlyAuthCaller view returns(string memory) {
         return userRole[_userAddress];
@@ -208,7 +218,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     function setBasicDetails(string memory _registrationNo,
         string memory _companyName,
         string memory _companyAddress
-    ) public onlyAuthCaller returns(address) {
+    ) public onlyAuthCaller returns(bool) {
 
         address batchNo = address(
                             uint160(
@@ -226,7 +236,8 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         nextAction[batchNo] = 'RAWMATERIALEXTRACTION';
         emit AddedBasicDetails(msg.sender, batchNo);
 
-        return batchNo;
+        lastHandledBatch[msg.sender] = batchNo;
+        return true;
     }
 
     function setRawMaterialExtractorData(address batchNo,
@@ -260,11 +271,13 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     function setChemicalProcessorData(address batchNo,
         string memory _refinedComponent,
         uint256 _refinedOutput,
-        uint256 _carbonEmission) public onlyAuthCaller returns(bool) {
-            
+        uint256 _carbonEmission,
+        uint256 amountDisposed) public onlyAuthCaller returns(bool) {
+
         chemicalProcessorData.refinedComponent = _refinedComponent;
         chemicalProcessorData.refinedOutput = _refinedOutput;
         chemicalProcessorData.carbonEmission = _carbonEmission;
+        chemicalProcessorData.amountDisposed = amountDisposed;
 
         batchChemicalProcessor[batchNo] = chemicalProcessorData;
 
@@ -322,6 +335,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     function setFilamentProducerData(address batchNo,
             string memory _companyAddress,
             string memory _componentName,
+            string memory _filamentType,
             uint256 _filamentOutput,
             uint256 _recycledMaterialsUsed,
             uint256 _carbonEmission,
@@ -330,6 +344,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
             filamentProducerData.companyAddress = _companyAddress;
             filamentProducerData.componentName = _componentName;
             filamentProducerData.filamentOutput = _filamentOutput;
+            filamentProducerData.filamentType = _filamentType;
             filamentProducerData.recycledMaterialsUsed = _recycledMaterialsUsed;
             filamentProducerData.carbonEmission = _carbonEmission;
             filamentProducerData.amountDisposed = _amountDisposed;
@@ -398,5 +413,38 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     function getRecycleCompanyData(address batchNo) public onlyAuthCaller view returns(uint256 amountDisposed) {
         RecyclingCompany memory tmpData = batchRecyclingCompany[batchNo];
         return tmpData.amountDisposed;
+    }
+
+    function cumulatedCarbonEmission(address batchNo, string memory _stage) public onlyAuthCaller view returns(uint256) {
+        uint256 carbonEmission = 0;
+        carbonEmission += batchChemicalProcessor[batchNo].carbonEmission;
+        if (compareStrings(_stage, 'RAWMATERIALEXTRACTION')) {
+            return carbonEmission;
+        }
+
+        carbonEmission += batchChemicalProcessor[batchNo].carbonEmission;
+        if (compareStrings(_stage, 'CHEMICALPROCESSOR')) {
+            return carbonEmission;
+        }
+
+        carbonEmission += batchPolymerizationCompany[batchNo].carbonEmission;
+        if (compareStrings(_stage, 'POLYMERIZATIONCOMPANY')) {
+            return carbonEmission;
+        }
+
+        carbonEmission += batchFilamentProducer[batchNo].carbonEmission;
+        if (compareStrings(_stage, 'FILAMENTPRODUCER')) {
+            return carbonEmission;
+        }
+
+        carbonEmission += batch3DPrintingCompany[batchNo].carbonEmission;
+        if (compareStrings(_stage, 'THREEDPRINTING')) {
+            return carbonEmission;
+        }
+
+        /* if (batchRecyclingCompany[batchNo].carbonEmission != 0) {
+            carbonEmission += batchRecyclingCompany[batchNo].carbonEmission;
+        } */
+        return carbonEmission;
     }
 }
