@@ -1,4 +1,5 @@
-pragma solidity ^0.4.23;
+//SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.4;
 import "./SupplyChainStorage.sol";
 import "./Ownable.sol";
 

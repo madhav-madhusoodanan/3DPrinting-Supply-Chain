@@ -1,424 +1,402 @@
-pragma solidity ^0.4.23;
+//SPDX-License-Identifier: UNLICENSED
+pragma solidity ^ 0.8.4;
 
 import "./SupplyChainStorageOwnable.sol";
 
 contract SupplyChainStorage is SupplyChainStorageOwnable {
     
-    address public lastAccess;
-    constructor() public {
+    /*Events*/
+    event AddedBasicDetails(address indexed user, address indexed batchNo);
+    event DoneRawMaterialExtractor(address indexed user, address indexed batchNo);
+    event DoneChemicalProcessor(address indexed user, address indexed batchNo);
+    event DonePolymerizationCompany(address indexed user, address indexed batchNo);
+    event DoneFilamentProducer(address indexed user, address indexed batchNo);
+    event Done3DPrintingCompany(address indexed user, address indexed batchNo);
+    event DoneRecycleCompany(address indexed user, address indexed batchNo);
+
+    // address public lastAccess;
+
+    constructor() {
         authorizedCaller[msg.sender] = 1;
         emit AuthorizedCaller(msg.sender);
     }
-    
-    /* Events */
+
+
     event AuthorizedCaller(address caller);
     event DeAuthorizedCaller(address caller);
-    
-    /* Modifiers */
-    
-    modifier onlyAuthCaller(){
-        lastAccess = msg.sender;
+
+
+
+    modifier onlyAuthCaller() {
+        // lastAccess = msg.sender;
         require(authorizedCaller[msg.sender] == 1);
         _;
     }
-    
-    /* User Related */
+
+
     struct user {
         string name;
         string contactNo;
         bool isActive;
         string profileHash;
-    } 
-    
+    }
+
     mapping(address => user) userDetails;
     mapping(address => string) userRole;
-    
-    /* Caller Mapping */
+
+
     mapping(address => uint8) authorizedCaller;
-    
-    /* authorize caller */
-    function authorizeCaller(address _caller) public onlyOwner returns(bool) 
-    {
+
+
+    function authorizeCaller(address _caller) public onlyOwner returns(bool) {
         authorizedCaller[_caller] = 1;
         emit AuthorizedCaller(_caller);
         return true;
     }
-    
-    /* deauthorize caller */
-    function deAuthorizeCaller(address _caller) public onlyOwner returns(bool) 
-    {
+
+
+    function deAuthorizeCaller(address _caller) public onlyOwner returns(bool) {
         authorizedCaller[_caller] = 0;
         emit DeAuthorizedCaller(_caller);
         return true;
     }
-    
-    /*User Roles
-        SUPER_ADMIN,
-        FARM_INSPECTION,
-        HARVESTER,
-        EXPORTER,
-        IMPORTER,
-        PROCESSOR
-    */
-    
-    /* Process Related */
-     struct basicDetails {
+
+
+
+    struct BasicDetails {
         string registrationNo;
-        string farmerName;
-        string farmAddress;
-        string exporterName;
-        string importerName;
-        
+        string companyName;
+        string companyAddress;
     }
-    
-    struct farmInspector {
-        string coffeeFamily;
-        string typeOfSeed;
-        string fertilizerUsed;
+
+
+    struct RawMaterialExtractor {
+        string rawMaterialName;
+        uint256 rawMaterialWeight;
+        uint256 carbonEmission;
+        uint256 avgWorkerAge;
+        bool isChildLabourUsed;
     }
-    
-    struct harvester {
-        string cropVariety;
-        string temperatureUsed;
-        string humidity;
-    }    
-    
-    struct exporter {
-        string destinationAddress;
-        string shipName;
-        string shipNo;
-        uint256 quantity;
-        uint256 departureDateTime;
-        uint256 estimateDateTime;
-        uint256 plantNo;
-        uint256 exporterId;
+
+
+    struct ChemicalProcessor {
+        string refinedComponent;
+        uint256 refinedOutput;
+        uint256 carbonEmission;
+        uint256 amountDisposed;
     }
-    
-    struct importer {
-        uint256 quantity;
-        uint256 arrivalDateTime;
-        uint256 importerId;
-        string shipName;
-        string shipNo;
-        string transportInfo;
-        string warehouseName;
-        string warehouseAddress;
+
+
+    struct PolymerizationCompany {
+        string companyName;
+        string companyAddress;
+        string componentName;
+
+        uint256 componentOutput;
+        uint256 recycledMaterialsUsed;
+
+        uint256 amountDisposed;
+
+        uint256 carbonEmission;
     }
-    
-    struct processor {
-        uint256 quantity;
-        uint256 rostingDuration;
-        uint256 packageDateTime;
-        string temperature;
-        string internalBatchNo;
-        string processorName;
-        string processorAddress;
+
+
+    struct FilamentProducer {
+        string companyAddress;
+        string componentName;
+        string filamentType;
+        uint256 filamentOutput;
+        uint256 recycledMaterialsUsed;
+        uint256 carbonEmission;
+        uint256 amountDisposed;
+
     }
-    
-    mapping (address => basicDetails) batchBasicDetails;
-    mapping (address => farmInspector) batchFarmInspector;
-    mapping (address => harvester) batchHarvester;
-    mapping (address => exporter) batchExporter;
-    mapping (address => importer) batchImporter;
-    mapping (address => processor) batchProcessor;
-    mapping (address => string) nextAction;
-    
-    /*Initialize struct pointer*/
+
+    struct ThreeDPrintingCompany {
+        // printed file
+        uint256 printime;
+        uint256 energyUsed;
+        uint256 carbonEmission;
+        uint256 partWeight;
+        uint256 scrapWeight;
+        uint256 amountDisposed;
+
+    }
+
+    struct RecyclingCompany {
+
+        uint256 amountDisposed;
+
+    }
+
+
+
+    mapping(address => BasicDetails) batchBasicDetails;
+    mapping(address => RawMaterialExtractor) batchRawMaterialExtractor;
+    mapping(address => ChemicalProcessor) batchChemicalProcessor;
+    mapping(address => PolymerizationCompany) batchPolymerizationCompany;
+    mapping(address => FilamentProducer) batchFilamentProducer;
+    mapping(address => ThreeDPrintingCompany) batch3DPrintingCompany;
+    mapping(address => RecyclingCompany) batchRecyclingCompany;
+    mapping(address => string) nextAction;
+
+
     user userDetail;
-    basicDetails basicDetailsData;
-    farmInspector farmInspectorData;
-    harvester harvesterData;
-    exporter exporterData;
-    importer importerData;
-    processor processorData; 
-    
-    
-    
-    /* Get User Role */
-    function getUserRole(address _userAddress) public onlyAuthCaller view returns(string)
-    {
+    BasicDetails basicDetailsData;
+    RawMaterialExtractor rawMaterialExtractorData;
+    ChemicalProcessor chemicalProcessorData;
+    PolymerizationCompany polymerizationCompanyData;
+    FilamentProducer filamentProducerData;
+    ThreeDPrintingCompany threeDPrintingCompanyData;
+    RecyclingCompany recyclingCompanyData;
+
+
+    function getUserRole(address _userAddress) public onlyAuthCaller view returns(string memory) {
         return userRole[_userAddress];
     }
-    
-    /* Get Next Action  */    
-    function getNextAction(address _batchNo) public onlyAuthCaller view returns(string)
-    {
+
+
+    function getNextAction(address _batchNo) public onlyAuthCaller view returns(string memory) {
         return nextAction[_batchNo];
     }
-        
-    /*set user details*/
+
+
     function setUser(address _userAddress,
-                     string _name, 
-                     string _contactNo, 
-                     string _role, 
-                     bool _isActive,
-                     string _profileHash) public onlyAuthCaller returns(bool){
-        
-        /*store data into struct*/
+        string memory _name,
+        string memory _contactNo,
+        string memory _role,
+        bool _isActive,
+        string memory _profileHash) public onlyAuthCaller returns(bool) {
+
         userDetail.name = _name;
         userDetail.contactNo = _contactNo;
         userDetail.isActive = _isActive;
         userDetail.profileHash = _profileHash;
-        
-        /*store data into mapping*/
+
+
         userDetails[_userAddress] = userDetail;
         userRole[_userAddress] = _role;
-        
-        return true;
-    }  
-    
-    /*get user details*/
-    function getUser(address _userAddress) public onlyAuthCaller view returns(string name, 
-                                                                    string contactNo, 
-                                                                    string role,
-                                                                    bool isActive, 
-                                                                    string profileHash
-                                                                ){
 
-        /*Getting value from struct*/
+        return true;
+    }
+
+
+    function getUser(address _userAddress) public onlyAuthCaller view returns(string memory name,
+        string memory contactNo,
+        string memory role,
+        bool isActive,
+        string memory profileHash
+    ) {
+
+
         user memory tmpData = userDetails[_userAddress];
-        
+
         return (tmpData.name, tmpData.contactNo, userRole[_userAddress], tmpData.isActive, tmpData.profileHash);
     }
-    
-    /*get batch basicDetails*/
-    function getBasicDetails(address _batchNo) public onlyAuthCaller view returns(string registrationNo,
-                             string farmerName,
-                             string farmAddress,
-                             string exporterName,
-                             string importerName) {
-        
-        basicDetails memory tmpData = batchBasicDetails[_batchNo];
-        
-        return (tmpData.registrationNo,tmpData.farmerName,tmpData.farmAddress,tmpData.exporterName,tmpData.importerName);
+
+
+    function getBasicDetails(address _batchNo) public onlyAuthCaller view returns(string memory registrationNo,
+        string memory companyName,
+        string memory companyAddress) {
+
+        BasicDetails memory tmpData = batchBasicDetails[_batchNo];
+
+        return (tmpData.registrationNo, tmpData.companyName, tmpData.companyAddress);
     }
-    
-    /*set batch basicDetails*/
-    function setBasicDetails(string _registrationNo,
-                             string _farmerName,
-                             string _farmAddress,
-                             string _exporterName,
-                             string _importerName
-                             
-                            ) public onlyAuthCaller returns(address) {
-        
-        uint tmpData = uint(keccak256(msg.sender, now));
-        address batchNo = address(tmpData);
-        
+
+
+    function setBasicDetails(string memory _registrationNo,
+        string memory _companyName,
+        string memory _companyAddress
+    ) public onlyAuthCaller returns(address) {
+
+        address batchNo = address(
+                            uint160(
+                                uint256(
+                                    keccak256(
+                                        abi.encodePacked(msg.sender, block.timestamp)
+                        ))));
+
         basicDetailsData.registrationNo = _registrationNo;
-        basicDetailsData.farmerName = _farmerName;
-        basicDetailsData.farmAddress = _farmAddress;
-        basicDetailsData.exporterName = _exporterName;
-        basicDetailsData.importerName = _importerName;
-        
+        basicDetailsData.companyName = _companyName;
+        basicDetailsData.companyAddress = _companyAddress;
+
         batchBasicDetails[batchNo] = basicDetailsData;
-        
-        nextAction[batchNo] = 'FARM_INSPECTION';   
-        
-        
+
+        nextAction[batchNo] = 'RAWMATERIALEXTRACTION';
+        emit AddedBasicDetails(msg.sender, batchNo);
+
         return batchNo;
     }
-    
-    /*set farm Inspector data*/
-    function setFarmInspectorData(address batchNo,
-                                    string _coffeeFamily,
-                                    string _typeOfSeed,
-                                    string _fertilizerUsed) public onlyAuthCaller returns(bool){
-        farmInspectorData.coffeeFamily = _coffeeFamily;
-        farmInspectorData.typeOfSeed = _typeOfSeed;
-        farmInspectorData.fertilizerUsed = _fertilizerUsed;
-        
-        batchFarmInspector[batchNo] = farmInspectorData;
-        
-        nextAction[batchNo] = 'HARVESTER'; 
-        
-        return true;
-    }
-    
-    
-    /*get farm inspactor data*/
-    function getFarmInspectorData(address batchNo) public onlyAuthCaller view returns (string coffeeFamily,string typeOfSeed,string fertilizerUsed){
-        
-        farmInspector memory tmpData = batchFarmInspector[batchNo];
-        return (tmpData.coffeeFamily, tmpData.typeOfSeed, tmpData.fertilizerUsed);
-    }
-    
 
-    /*set Harvester data*/
-    function setHarvesterData(address batchNo,
-                              string _cropVariety,
-                              string _temperatureUsed,
-                              string _humidity) public onlyAuthCaller returns(bool){
-        harvesterData.cropVariety = _cropVariety;
-        harvesterData.temperatureUsed = _temperatureUsed;
-        harvesterData.humidity = _humidity;
-        
-        batchHarvester[batchNo] = harvesterData;
-        
-        nextAction[batchNo] = 'EXPORTER'; 
-        
+    function setRawMaterialExtractorData(address batchNo,
+        string memory _rawMaterialName,
+        uint256 _rawMaterialWeight,
+        uint256 _carbonEmission,
+        uint256 _workerAge) public onlyAuthCaller returns(bool) {
+
+        rawMaterialExtractorData.rawMaterialName = _rawMaterialName;
+        rawMaterialExtractorData.rawMaterialWeight = _rawMaterialWeight;
+        rawMaterialExtractorData.carbonEmission = _carbonEmission;
+        rawMaterialExtractorData.avgWorkerAge = _workerAge;
+
+        batchRawMaterialExtractor[batchNo] = rawMaterialExtractorData;
+
+        nextAction[batchNo] = 'CHEMICALPROCESSING';
+        emit DoneRawMaterialExtractor(msg.sender, batchNo);
+
         return true;
     }
-    
-    /*get farm Harvester data*/
-    function getHarvesterData(address batchNo) public onlyAuthCaller view returns(string cropVariety,
-                                                                                           string temperatureUsed,
-                                                                                           string humidity){
-        
-        harvester memory tmpData = batchHarvester[batchNo];
-        return (tmpData.cropVariety, tmpData.temperatureUsed, tmpData.humidity);
+
+
+    function getRawMaterialExtractorData(address batchNo) public onlyAuthCaller view returns(string memory rawMaterialName,
+        uint256 rawMaterialWeight,
+        uint256 carbonEmission) {
+
+        RawMaterialExtractor memory tmpData = batchRawMaterialExtractor[batchNo];
+        return (tmpData.rawMaterialName, tmpData.rawMaterialWeight, tmpData.carbonEmission);
     }
-    
-    /*set Exporter data*/
-    function setExporterData(address batchNo,
-                              uint256 _quantity,    
-                              string _destinationAddress,
-                              string _shipName,
-                              string _shipNo,
-                              uint256 _estimateDateTime,
-                              uint256 _exporterId) public onlyAuthCaller returns(bool){
-        
-        exporterData.quantity = _quantity;
-        exporterData.destinationAddress = _destinationAddress;
-        exporterData.shipName = _shipName;
-        exporterData.shipNo = _shipNo;
-        exporterData.departureDateTime = now;
-        exporterData.estimateDateTime = _estimateDateTime;
-        exporterData.exporterId = _exporterId;
-        
-        batchExporter[batchNo] = exporterData;
-        
-        nextAction[batchNo] = 'IMPORTER'; 
-        
+
+    function setChemicalProcessorData(address batchNo,
+        string memory _refinedComponent,
+        uint256 _refinedOutput,
+        uint256 _carbonEmission) public onlyAuthCaller returns(bool) {
+            
+        chemicalProcessorData.refinedComponent = _refinedComponent;
+        chemicalProcessorData.refinedOutput = _refinedOutput;
+        chemicalProcessorData.carbonEmission = _carbonEmission;
+
+        batchChemicalProcessor[batchNo] = chemicalProcessorData;
+
+        nextAction[batchNo] = 'POLYMERIZATION';
+        emit DoneChemicalProcessor(msg.sender, batchNo);
+
         return true;
     }
-    
-    /*get Exporter data*/
-    function getExporterData(address batchNo) public onlyAuthCaller view returns(uint256 quantity,
-                                                                string destinationAddress,
-                                                                string shipName,
-                                                                string shipNo,
-                                                                uint256 departureDateTime,
-                                                                uint256 estimateDateTime,
-                                                                uint256 exporterId){
-        
-        
-        exporter memory tmpData = batchExporter[batchNo];
-        
-        
-        return (tmpData.quantity, 
-                tmpData.destinationAddress, 
-                tmpData.shipName, 
-                tmpData.shipNo, 
-                tmpData.departureDateTime, 
-                tmpData.estimateDateTime, 
-                tmpData.exporterId);
+
+    function getChemicalProcessorData(address batchNo) public onlyAuthCaller view returns(string memory refinedComponent,
+        uint256 refinedOutput,
+        uint256 carbonEmission, uint256 amountDisposed) {
+
+        ChemicalProcessor memory tmpData = batchChemicalProcessor[batchNo];
+        return (tmpData.refinedComponent, tmpData.refinedOutput, tmpData.carbonEmission, tmpData.amountDisposed);
+    }
+
+    function setPolymerizationCompanyData(address batchNo,
+        string memory _companyName,
+        string memory _companyAddress,
+        string memory _componentName,
+        uint256 _componentOutput,
+        uint256 _recycledMaterialsUsed,
+        uint256 _carbonEmission,
+        uint256 _amountDisposed) public onlyAuthCaller returns(bool) {
+
+        polymerizationCompanyData.companyName = _companyName;
+        polymerizationCompanyData.companyAddress = _companyAddress;
+        polymerizationCompanyData.componentName = _componentName;
+        polymerizationCompanyData.componentOutput = _componentOutput;
+        polymerizationCompanyData.recycledMaterialsUsed = _recycledMaterialsUsed;
+        polymerizationCompanyData.carbonEmission = _carbonEmission;
+        polymerizationCompanyData.amountDisposed = _amountDisposed;
+
+        batchPolymerizationCompany[batchNo] = polymerizationCompanyData;
+
+        nextAction[batchNo] = 'FILAMENTPRODUCER';
+        emit DonePolymerizationCompany(msg.sender, batchNo);
+
+        return true;
+    }
+
+    function getPolymerizationCompanyData(address batchNo) public onlyAuthCaller view returns(string memory companyName,
+        string memory companyAddress,
+        string memory componentName,
+        uint256 componentOutput,
+        uint256 recycledMaterialsUsed,
+        uint256 carbonEmission,
+        uint256 amountDisposed) {
+
+        PolymerizationCompany memory tmpData = batchPolymerizationCompany[batchNo];
+        return (tmpData.companyName, tmpData.companyAddress, tmpData.componentName, tmpData.componentOutput, tmpData.recycledMaterialsUsed, tmpData.carbonEmission, tmpData.amountDisposed);
+    }
+
+    function setFilamentProducerData(address batchNo,
+            string memory _companyAddress,
+            string memory _componentName,
+            uint256 _filamentOutput,
+            uint256 _recycledMaterialsUsed,
+            uint256 _carbonEmission,
+            uint256 _amountDisposed) public onlyAuthCaller returns(bool) {
+
+            filamentProducerData.companyAddress = _companyAddress;
+            filamentProducerData.componentName = _componentName;
+            filamentProducerData.filamentOutput = _filamentOutput;
+            filamentProducerData.recycledMaterialsUsed = _recycledMaterialsUsed;
+            filamentProducerData.carbonEmission = _carbonEmission;
+            filamentProducerData.amountDisposed = _amountDisposed;
+
+            batchFilamentProducer[batchNo] = filamentProducerData;
+
+            nextAction[batchNo] = 'THREEDPRINTING';
+            emit DoneFilamentProducer(msg.sender, batchNo);
+
+            return true;
+        }
+
+        function getFilamentProducerData(address batchNo) public onlyAuthCaller view returns(
+            string memory companyAddress,
+            string memory componentName,
+            string memory filamentType,
+            uint256 filamentOutput,
+            uint256 recycledMaterialsUsed,
+            uint256 carbonEmission,
+            uint256 amountDisposed) {
+
+            FilamentProducer memory tmpData = batchFilamentProducer[batchNo];
+            return (tmpData.companyAddress, tmpData.componentName, tmpData.filamentType, tmpData.filamentOutput, tmpData.recycledMaterialsUsed, tmpData.carbonEmission, tmpData.amountDisposed);
+        }
+
+    function set3DPrintingCompanyData(address batchNo, uint256 _printime,
+            uint256 _energyUsed,
+            uint256 _carbonEmission,
+            uint256 _partWeight,
+            uint256 _scrapWeight,
+            uint256 _amountDisposed) public {
+                threeDPrintingCompanyData.printime = _printime;
+                threeDPrintingCompanyData.energyUsed = _energyUsed;
+                threeDPrintingCompanyData.carbonEmission = _carbonEmission;
+                threeDPrintingCompanyData.partWeight = _partWeight;
+                threeDPrintingCompanyData.scrapWeight = _scrapWeight;
+                threeDPrintingCompanyData.amountDisposed = _amountDisposed;
+
+                batch3DPrintingCompany[batchNo] = threeDPrintingCompanyData;
+
+                nextAction[batchNo] = 'RECYCLE';
+                emit Done3DPrintingCompany(msg.sender, batchNo);
                 
-        
-    }
+            }
 
-    
-    /*set Importer data*/
-    function setImporterData(address batchNo,
-                              uint256 _quantity, 
-                              string _shipName,
-                              string _shipNo,
-                              string _transportInfo,
-                              string _warehouseName,
-                              string _warehouseAddress,
-                              uint256 _importerId) public onlyAuthCaller returns(bool){
-        
-        importerData.quantity = _quantity;
-        importerData.shipName = _shipName;
-        importerData.shipNo = _shipNo;
-        importerData.arrivalDateTime = now;
-        importerData.transportInfo = _transportInfo;
-        importerData.warehouseName = _warehouseName;
-        importerData.warehouseAddress = _warehouseAddress;
-        importerData.importerId = _importerId;
-        
-        batchImporter[batchNo] = importerData;
-        
-        nextAction[batchNo] = 'PROCESSOR'; 
-        
+    function get3DPrintingCompanyData (address batchNo) public onlyAuthCaller view returns (uint256 _printime,
+            uint256 _energyUsed,
+            uint256 _carbonEmission,
+            uint256 _partWeight,
+            uint256 _scrapWeight,
+            uint256 _amountDisposed){
+                ThreeDPrintingCompany memory tmpData = batch3DPrintingCompany[batchNo];
+                return (tmpData.printime, tmpData.energyUsed, tmpData.carbonEmission, tmpData.partWeight, tmpData.scrapWeight, tmpData.amountDisposed);
+            }
+
+    function setRecycleCompanyData(address batchNo, uint256 _amountDisposed) public onlyAuthCaller returns(bool) {
+        recyclingCompanyData.amountDisposed = _amountDisposed;
+
+        batchRecyclingCompany[batchNo] = recyclingCompanyData;
+        nextAction[batchNo] = 'DONE';
+        emit DoneRecycleCompany(msg.sender, batchNo);
+
         return true;
     }
-    
-    /*get Importer data*/
-    function getImporterData(address batchNo) public onlyAuthCaller view returns(uint256 quantity,
-                                                                                        string shipName,
-                                                                                        string shipNo,
-                                                                                        uint256 arrivalDateTime,
-                                                                                        string transportInfo,
-                                                                                        string warehouseName,
-                                                                                        string warehouseAddress,
-                                                                                        uint256 importerId){
-        
-        importer memory tmpData = batchImporter[batchNo];
-        
-        
-        return (tmpData.quantity, 
-                tmpData.shipName, 
-                tmpData.shipNo, 
-                tmpData.arrivalDateTime, 
-                tmpData.transportInfo,
-                tmpData.warehouseName,
-                tmpData.warehouseAddress,
-                tmpData.importerId);
-                
-        
-    }
 
-    /*set Proccessor data*/
-    function setProcessorData(address batchNo,
-                              uint256 _quantity, 
-                              string _temperature,
-                              uint256 _rostingDuration,
-                              string _internalBatchNo,
-                              uint256 _packageDateTime,
-                              string _processorName,
-                              string _processorAddress) public onlyAuthCaller returns(bool){
-        
-        
-        processorData.quantity = _quantity;
-        processorData.temperature = _temperature;
-        processorData.rostingDuration = _rostingDuration;
-        processorData.internalBatchNo = _internalBatchNo;
-        processorData.packageDateTime = _packageDateTime;
-        processorData.processorName = _processorName;
-        processorData.processorAddress = _processorAddress;
-        
-        batchProcessor[batchNo] = processorData;
-        
-        nextAction[batchNo] = 'DONE'; 
-        
-        return true;
+    function getRecycleCompanyData(address batchNo) public onlyAuthCaller view returns(uint256 amountDisposed) {
+        RecyclingCompany memory tmpData = batchRecyclingCompany[batchNo];
+        return tmpData.amountDisposed;
     }
-    
-    
-    /*get Processor data*/
-    function getProcessorData( address batchNo) public onlyAuthCaller view returns(
-                                                                                        uint256 quantity,
-                                                                                        string temperature,
-                                                                                        uint256 rostingDuration,
-                                                                                        string internalBatchNo,
-                                                                                        uint256 packageDateTime,
-                                                                                        string processorName,
-                                                                                        string processorAddress){
-
-        processor memory tmpData = batchProcessor[batchNo];
-        
-        
-        return (
-                tmpData.quantity, 
-                tmpData.temperature, 
-                tmpData.rostingDuration, 
-                tmpData.internalBatchNo,
-                tmpData.packageDateTime,
-                tmpData.processorName,
-                tmpData.processorAddress);
-                
-        
-    }
-  
-}    
+}
