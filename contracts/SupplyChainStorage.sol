@@ -105,13 +105,11 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         string companyName;
         string companyAddress;
         string componentName;
-
         uint256 componentOutput;
         uint256 recycledMaterialsUsed;
-
+        uint256 carbonEmission;
         uint256 amountDisposed;
 
-        uint256 carbonEmission;
     }
 
 
@@ -383,7 +381,8 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
             return (tmpData.companyAddress, tmpData.componentName, tmpData.filamentType, tmpData.filamentOutput, tmpData.recycledMaterialsUsed, tmpData.carbonEmission, tmpData.amountDisposed);
         }
 
-    function set3DPrintingCompanyData(address batchNo, uint256 _printime,
+    function set3DPrintingCompanyData(address batchNo, 
+            uint256 _printime,
             uint256 _energyUsed,
             uint256 _carbonEmission,
             uint256 _partWeight,
@@ -401,7 +400,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
                 nextAction[batchNo] = 'RECYCLE';
                 emit Done3DPrintingCompany(msg.sender, batchNo);
 
-
+                return true;
                 
             }
 
