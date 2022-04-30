@@ -40,7 +40,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
             6. 3D printing
             7. recycling
              */
-        require(authorizedCaller[msg.sender] == role);
+        require(authorizedCaller[msg.sender] == role || authorizedCaller[msg.sender] == 1);
         _;
     }
     modifier onlyAuthorized() {
@@ -172,8 +172,8 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         // delete lastHandledBatch[msg.sender];
     }
 
-    function getUserRole(address _userAddress) public view returns(string memory) {
-        return userRole[_userAddress];
+    function getUserRole() public view returns(uint8) {
+        return authorizedCaller[msg.sender];
     }
 
 
@@ -238,6 +238,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
                                         abi.encodePacked(msg.sender, block.timestamp)
                         ))));
 
+        lastHandledBatch[msg.sender] = batchNo;
         basicDetailsData.registrationNo = _registrationNo;
         basicDetailsData.companyName = _companyName;
         basicDetailsData.companyAddress = _companyAddress;
@@ -247,7 +248,6 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         nextAction[batchNo] = 'RAWMATERIALEXTRACTION';
         emit AddedBasicDetails(msg.sender, batchNo);
 
-        lastHandledBatch[msg.sender] = batchNo;
         return true;
     }
 
