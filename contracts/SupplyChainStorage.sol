@@ -431,7 +431,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
 
     function cumulatedCarbonEmission(address batchNo, string memory _stage) public view returns(uint256) {
         uint256 carbonEmission = 0;
-        carbonEmission += batchChemicalProcessor[batchNo].carbonEmission;
+        carbonEmission += batchRawMaterialExtractor[batchNo].carbonEmission;
         if (compareStrings(_stage, 'RAWMATERIALEXTRACTION')) {
             return carbonEmission;
         }

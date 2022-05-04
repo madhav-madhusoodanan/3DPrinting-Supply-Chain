@@ -27,7 +27,12 @@ describe("SupplyChainStorage", function () {
     })
 
     it("allows adding raw material extraction data", async function () {
-        /* batch address, materialname string, weight uint256, carbonEmission uint256, workerAge uint256 */
+        /* batch address, 
+           materialname string, 
+           weight uint256, 
+           carbonEmission uint256, 
+           workerAge uint256 
+          */
         await scs.setRawMaterialExtractorData(batchNo, "plastic", BigNumber.from("234"), BigNumber.from("123"), BigNumber.from("42"))
 
         const returnVal = await scs.getRawMaterialExtractorData(batchNo)

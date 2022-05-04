@@ -22,5 +22,9 @@ module.exports = {
         hardhat: {
             chainId: 1337,
         },
+        ganache: {
+            chainId: 1337,
+            url: "http://127.0.0.1:8545"
+        }
     },
 }
