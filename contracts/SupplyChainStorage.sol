@@ -404,7 +404,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
                 
             }
 
-    function get3DPrintingCompanyData (address batchNo) public onlyAuthCaller(7) view returns (uint256 _printime,
+    function get3DPrintingCompanyData (address batchNo) public onlyAuthorized view returns (uint256 _printime,
             uint256 _energyUsed,
             uint256 _carbonEmission,
             uint256 _partWeight,
@@ -414,7 +414,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
                 return (tmpData.printime, tmpData.energyUsed, tmpData.carbonEmission, tmpData.partWeight, tmpData.scrapWeight, tmpData.amountDisposed);
             }
 
-    function setRecycleCompanyData(address batchNo, uint256 _amountDisposed) public onlyAuthCaller(8) returns(bool) {
+    function setRecycleCompanyData(address batchNo, uint256 _amountDisposed) public onlyAuthCaller(7) returns(bool) {
         recyclingCompanyData.amountDisposed = _amountDisposed;
 
         batchRecyclingCompany[batchNo] = recyclingCompanyData;
