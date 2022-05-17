@@ -32,13 +32,15 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     modifier onlyAuthCaller(uint8 role) {
         // lastAccess = msg.sender;
 
-        /* 1: 
-            2: raw materials
-            3. chemical processing
-            4. polymerization
-            5. filament production
-            6. 3D printing
-            7. recycling
+        /* 
+        1: super user
+        	2: batch initiator
+            3: raw materials
+            4. chemical processing
+            5. polymerization
+            6. filament production
+            7. 3D printing
+            8. recycling
              */
         require(authorizedCaller[msg.sender] == role || authorizedCaller[msg.sender] == 1);
         _;
@@ -229,7 +231,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
     function setBasicDetails(string memory _registrationNo,
         string memory _companyName,
         string memory _companyAddress
-    ) public onlyAuthorized returns(bool) {
+    ) public onlyAuthCaller(2) returns(bool) {
 
         address batchNo = address(
                             uint160(
@@ -255,7 +257,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         string memory _rawMaterialName,
         uint256 _rawMaterialWeight,
         uint256 _carbonEmission,
-        uint256 _workerAge) public onlyAuthCaller(2) returns(bool) {
+        uint256 _workerAge) public onlyAuthCaller(3) returns(bool) {
 
         rawMaterialExtractorData.rawMaterialName = _rawMaterialName;
         rawMaterialExtractorData.rawMaterialWeight = _rawMaterialWeight;
@@ -283,7 +285,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         string memory _refinedComponent,
         uint256 _refinedOutput,
         uint256 _carbonEmission,
-        uint256 amountDisposed) public onlyAuthCaller(3) returns(bool) {
+        uint256 amountDisposed) public onlyAuthCaller(4) returns(bool) {
 
         chemicalProcessorData.refinedComponent = _refinedComponent;
         chemicalProcessorData.refinedOutput = _refinedOutput;
@@ -313,7 +315,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
         uint256 _componentOutput,
         uint256 _recycledMaterialsUsed,
         uint256 _carbonEmission,
-        uint256 _amountDisposed) public onlyAuthCaller(4) returns(bool) {
+        uint256 _amountDisposed) public onlyAuthCaller(5) returns(bool) {
 
         polymerizationCompanyData.companyName = _companyName;
         polymerizationCompanyData.companyAddress = _companyAddress;
@@ -350,7 +352,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
             uint256 _filamentOutput,
             uint256 _recycledMaterialsUsed,
             uint256 _carbonEmission,
-            uint256 _amountDisposed) public onlyAuthCaller(5) returns(bool) {
+            uint256 _amountDisposed) public onlyAuthCaller(6) returns(bool) {
 
             filamentProducerData.companyAddress = _companyAddress;
             filamentProducerData.componentName = _componentName;
@@ -387,7 +389,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
             uint256 _carbonEmission,
             uint256 _partWeight,
             uint256 _scrapWeight,
-            uint256 _amountDisposed) public onlyAuthCaller(6) returns(bool) {
+            uint256 _amountDisposed) public onlyAuthCaller(7) returns(bool) {
                 threeDPrintingCompanyData.printime = _printime;
                 threeDPrintingCompanyData.energyUsed = _energyUsed;
                 threeDPrintingCompanyData.carbonEmission = _carbonEmission;
@@ -414,7 +416,7 @@ contract SupplyChainStorage is SupplyChainStorageOwnable {
                 return (tmpData.printime, tmpData.energyUsed, tmpData.carbonEmission, tmpData.partWeight, tmpData.scrapWeight, tmpData.amountDisposed);
             }
 
-    function setRecycleCompanyData(address batchNo, uint256 _amountDisposed) public onlyAuthCaller(7) returns(bool) {
+    function setRecycleCompanyData(address batchNo, uint256 _amountDisposed) public onlyAuthCaller(8) returns(bool) {
         recyclingCompanyData.amountDisposed = _amountDisposed;
 
         batchRecyclingCompany[batchNo] = recyclingCompanyData;
